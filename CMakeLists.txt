@@ -5,6 +5,6 @@ set(CMAKE_C_STANDARD 11)
 
 find_package(SDL3 REQUIRED)
 
-add_executable(chip8 main.c)
+add_executable(chip8 src/main.c)
 
 target_link_libraries(chip8 PRIVATE SDL3::SDL3)
