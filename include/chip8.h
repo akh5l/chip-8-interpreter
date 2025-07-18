@@ -2,7 +2,10 @@
 #define CHIP8_H
 
 #include <stdint.h>
+#include <stdbool.h>
 #include "stack.h"
+
+extern const uint8_t fontset[80]; // stores fontset to be copied into memory
 
 typedef struct {
   uint8_t memory[4096]; // 4KB RAM
@@ -20,15 +23,13 @@ typedef struct {
 
   uint16_t opcode; // stores current opcode
 
-  static const uint8_t fontset[80]; // stores fontset to be copied into memory
-
 } chip8;
 
 void chip8_init(chip8* c8); // clear all memory, load fonts, and set PC to 0x200
 
-void chip8_load_rom(chip8* c8, const char* filepath); // load a ROM into memory starting at 0x200
+bool chip8_load_rom(chip8* c8, const char* filepath); // load a ROM into memory starting at 0x200
 
-void chip8_tick(chip8* c8); // fetch, decode, execute single opcode
+void chip8_cycle(chip8* c8); // fetch, decode, execute single opcode
 
 void chip8_update_timers(chip8* c8); // update delay & sound timers
 

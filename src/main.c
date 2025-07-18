@@ -1,10 +1,7 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
-
 #include <stdio.h>
-
-#include "../include/stack.h"
-
+#include "../include/chip8.h"
 
 
 #define WIDTH 64
@@ -15,7 +12,7 @@
 int main(int argc, char *argv[])
 {
   if (!SDL_Init(SDL_INIT_VIDEO)) {
-    printf("failed to initialize video\n");
+    fprintf(stderr, "failed to initialize video\n");
     return 1;
   } 
 
@@ -23,6 +20,14 @@ int main(int argc, char *argv[])
 
   SDL_Window* window = SDL_CreateWindow("CHIP-8", WIDTH * SCALE, HEIGHT * SCALE, SDL_WINDOW_INPUT_FOCUS);
   SDL_Renderer* renderer = SDL_CreateRenderer(window, NULL);
+
+  chip8 c8;
+  chip8_init(&c8);
+
+  if (!chip8_load_rom(&c8, "../test-roms/ibm-logo.ch8")) {
+    fprintf(stderr, "Failed to load ROM!");
+    return 1;
+  }
 
   bool running = true;
   while (running) { // extract function?
@@ -41,7 +46,7 @@ int main(int argc, char *argv[])
     int pitch = WIDTH * 4; // WIDTH to be replaced by texture width?
 
     if (!SDL_LockTexture(texture, NULL, &pixels, &pitch)) {
-      printf("failed to lock texture\n");
+      fprintf(stderr, "failed to lock texture\n");
       return 1;
     }
 
