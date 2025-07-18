@@ -5,7 +5,7 @@
 #include "../include/chip8.h"
 
 
-#define SCALE 10
+#define SCALE 12
 
 int main(int argc, char *argv[])
 {
@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
   chip8 c8;
   chip8_init(&c8);
 
-  if (!chip8_load_rom(&c8, "../test-roms/ibm-logo.ch8")) {
+  if (!chip8_load_rom(&c8, "../test-roms/test-opcode.ch8")) {
     fprintf(stderr, "Failed to load ROM!");
     return 1;
   }
