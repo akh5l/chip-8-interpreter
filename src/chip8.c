@@ -159,18 +159,12 @@ void chip8_execute(chip8* c8, uint16_t opcode) {
           c8->V[(opcode & 0x0F00) >> 8] += c8->V[(opcode & 0x00F0) >> 4];
           break;
         case 5:
-          uint8_t x = (opcode & 0x0F00) >> 8; // VX - VY
-          uint8_t y = (opcode & 0x00F0) >> 4;
-
-          c8->V[0xF] = c8->V[x] >= c8->V[y] ? 1 : 0; // no borrow = 1
-          c8->V[x] = c8->V[x] - c8->V[y]; // wraps naturally unsigned
+          c8->V[0xF] = c8->V[(opcode & 0x0F00) >> 8] >= c8->V[(opcode & 0x00F0) >> 4] ? 1 : 0; // no borrow = 1
+          c8->V[(opcode & 0x0F00) >> 8] = c8->V[(opcode & 0x0F00) >> 8] - c8->V[(opcode & 0x00F0) >> 4]; // wraps naturally unsigned
           break;
         case 7:
-          uint8_t x = (opcode & 0x0F00) >> 8; // VY - VX
-          uint8_t y = (opcode & 0x00F0) >> 4;
-
-          c8->V[0xF] = c8->V[y] >= c8->V[x] ? 1 : 0; // no borrow = 1
-          c8->V[x] = c8->V[y] - c8->V[x]; // wraps naturally unsigned
+          c8->V[0xF] = c8->V[(opcode & 0x00F0) >> 4] >= c8->V[(opcode & 0x0F00) >> 8] ? 1 : 0; // no borrow = 1
+          c8->V[(opcode & 0x0F00) >> 8] = c8->V[(opcode & 0x00F0) >> 4] - c8->V[(opcode & 0x0F00) >> 8]; // wraps naturally unsigned
           break;
       }
       break;
