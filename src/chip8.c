@@ -104,19 +104,78 @@ void chip8_execute(chip8* c8, uint16_t opcode) {
       c8->PC = opcode & 0x0FFF;
       break;
 
+    case 0x3000:
+      if (c8->V[(opcode & 0x0F00) >> 8] == (opcode & 0x00FF)) { // the following 4 are conditional skips
+        c8->PC += 2;
+      }
+      break;
+    
+    case 0x4000:
+      if (c8->V[(opcode & 0x0F00) >> 8] != (opcode & 0x00FF)) {
+        c8->PC += 2;
+      }
+      break;
+
+    case 0x5000:
+      if (c8->V[(opcode & 0x0F00) >> 8] == c8->V[(opcode & 0x00F0) >> 4]) {
+        c8->PC += 2;
+      }
+      break;
+    
+    case 0x9000:
+      if (c8->V[(opcode & 0x0F00) >> 8] != c8->V[(opcode & 0x00F0) >> 4]) {
+        c8->PC += 2;
+      }
+      break;
+
     case 0x6000:
-      c8->V[(opcode & 0x0F00) >> 8] = opcode & 0x00FF;
+      c8->V[(opcode & 0x0F00) >> 8] = opcode & 0x00FF; // set VX to NN
       break;
     
     case 0x7000:
-      c8->V[(opcode & 0x0F00) >> 8] += opcode & 0x00FF;
+      c8->V[(opcode & 0x0F00) >> 8] += opcode & 0x00FF; // add NN to VX
       break;
     
     case 0xA000:
-      c8->I = opcode & 0x0FFF;
+      c8->I = opcode & 0x0FFF; // I (index) set to NNN
       break;
     
-    case 0xD000:
+    case 0x8000: // logical & arithmetic instructions
+      switch (opcode & 0x000F) {
+        case 0:
+          c8->V[(opcode & 0x0F00) >> 8] = c8->V[(opcode & 0x00F0) >> 4]; // VX set equal to VY
+          break;
+        case 1:
+          c8->V[(opcode & 0x0F00) >> 8] |= c8->V[(opcode & 0x00F0) >> 4]; // VX set to VX bitwise OR VY
+          break;
+        case 2:
+          c8->V[(opcode & 0x0F00) >> 8] &= c8->V[(opcode & 0x00F0) >> 4]; // VX set to VX bitwise AND VY
+          break;
+        case 3:
+          c8->V[(opcode & 0x0F00) >> 8] ^= c8->V[(opcode & 0x00F0) >> 4]; // VX set to VX bitwise XOR VY
+          break;
+        case 4:
+          c8->V[0xF] = (c8->V[(opcode & 0x0F00) >> 8] + c8->V[(opcode & 0x00F0) >> 4]) > 255; // trigger flag if overflow
+          c8->V[(opcode & 0x0F00) >> 8] += c8->V[(opcode & 0x00F0) >> 4];
+          break;
+        case 5:
+          uint8_t x = (opcode & 0x0F00) >> 8; // VX - VY
+          uint8_t y = (opcode & 0x00F0) >> 4;
+
+          c8->V[0xF] = c8->V[x] >= c8->V[y] ? 1 : 0; // no borrow = 1
+          c8->V[x] = c8->V[x] - c8->V[y]; // wraps naturally unsigned
+          break;
+        case 7:
+          uint8_t x = (opcode & 0x0F00) >> 8; // VY - VX
+          uint8_t y = (opcode & 0x00F0) >> 4;
+
+          c8->V[0xF] = c8->V[y] >= c8->V[x] ? 1 : 0; // no borrow = 1
+          c8->V[x] = c8->V[y] - c8->V[x]; // wraps naturally unsigned
+          break;
+      }
+      break;
+    
+    case 0xD000: // writing to display
       uint8_t x = c8->V[(opcode & 0x0F00) >> 8]; // get x from VX and wrap around screen with modulo
       uint8_t y = c8->V[(opcode & 0x00F0) >> 4]; // same as above but VY and y
       uint8_t n = opcode & 0x000F;
