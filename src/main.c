@@ -1,11 +1,9 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
 #include <stdio.h>
+
 #include "../include/chip8.h"
 
-
-#define WIDTH 64
-#define HEIGHT 32
 
 #define SCALE 10
 
@@ -42,18 +40,26 @@ int main(int argc, char *argv[])
       }
     }
 
+    if (!chip8_cycle(&c8)) {
+      running = false;
+    }
+
     void* pixels;
     int pitch = WIDTH * 4; // WIDTH to be replaced by texture width?
 
     if (!SDL_LockTexture(texture, NULL, &pixels, &pitch)) {
-      fprintf(stderr, "failed to lock texture\n");
+      fprintf(stderr, "failed to lock texture: %s\n", SDL_GetError());
       return 1;
     }
 
-    uint8_t* framebuffer = (uint8_t*) pixels;
+    uint32_t* framebuffer = (uint32_t*)pixels;
 
-    // framebuffer[y * pitch / 4 + x] for individual pixel manipulation
-    
+    for (int y = 0; y < HEIGHT; y++) {
+      for (int x = 0; x < WIDTH; x++) {
+        uint8_t pixel = c8.display[y * WIDTH + x];
+        framebuffer[y * (pitch / 4) + x] = pixel ? 0xFFFFFFFF : 0xFF000000;
+      }
+    }
 
 
     SDL_UnlockTexture(texture);

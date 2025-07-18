@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <string.h>
 
-
 #define ROM_START 0x200
 
 void chip8_init(chip8* c8) { 
@@ -15,7 +14,6 @@ void chip8_init(chip8* c8) {
   c8->I = 0;
   c8->delay_timer = 0;
   c8->sound_timer = 0;
-  c8->opcode = 0;
 
   stack_initialize(&c8->stack);
 
@@ -74,9 +72,89 @@ bool chip8_load_rom(chip8* c8, const char* filepath) {
   return true;
 }
 
+uint16_t chip8_fetch(chip8* c8) {
+  // combine two nibbles into one opcode
+  uint16_t opcode = c8->memory[c8->PC] << 8 | c8->memory[c8->PC + 1];
+
+  // increment by 2 as next instruction is 2 bytes ahead
+  c8->PC += 2;
+
+  return opcode;
+}
+
+void chip8_execute(chip8* c8, uint16_t opcode) {
+
+  // isolates first hex character to categorise opcode
+  switch (opcode & 0xF000) {
+    case 0x0000:
+      if (opcode == 0x00E0) { // clear display
+        memset(c8->display, 0, sizeof(c8->display));
+      }
+      else if (opcode == 0x00EE) { // return to last PC value stored in stack
+        c8->PC = (uint16_t)(uintptr_t)stack_pop(&c8->stack);
+      }
+      break;
+    
+    case 0x1000:
+      c8->PC = opcode & 0x0FFF; // PC jumps to 0x0NNN
+      break;
+    
+    case 0x2000:
+      stack_push(&c8->stack, (void*)(uintptr_t)c8->PC); // store current PC value and jump to 0x0NNN
+      c8->PC = opcode & 0x0FFF;
+      break;
+
+    case 0x6000:
+      c8->V[(opcode & 0x0F00) >> 8] = opcode & 0x00FF;
+      break;
+    
+    case 0x7000:
+      c8->V[(opcode & 0x0F00) >> 8] += opcode & 0x00FF;
+      break;
+    
+    case 0xA000:
+      c8->I = opcode & 0x0FFF;
+      break;
+    
+    case 0xD000:
+      uint8_t x = c8->V[(opcode & 0x0F00) >> 8]; // get x from VX and wrap around screen with modulo
+      uint8_t y = c8->V[(opcode & 0x00F0) >> 4]; // same as above but VY and y
+      uint8_t n = opcode & 0x000F;
+
+      c8->V[0xF] = 0;
+
+      for (int row = 0; row < n; row++) {
+        uint8_t sprite_byte = c8->memory[c8->I + row];
+        uint8_t pixel_y = (y + row) % HEIGHT;
+        for (int col = 0; col < 8; col++) { // col < 8 as it's just going thru the byte
+          uint8_t pixel_x = (x + col) % WIDTH;
+          uint8_t sprite_pixel = (sprite_byte >> (7 - col)) & 1;
+
+          uint16_t idx = (pixel_y * WIDTH + pixel_x);
+
+          if (sprite_pixel == 1) {
+            if (c8->display[idx] == 1) {
+              c8->V[0xF] = 1;
+            }
+            c8->display[idx] ^= 1;
+          }
+        }
+      }
+
+      break;
+  }
+}
+
 // fetch, decode, execute single opcode
-void chip8_cycle(chip8* c8) { 
-  
+bool chip8_cycle(chip8* c8) { 
+  if (c8->PC >= 4096) {
+    fprintf(stderr, "Program counter out of bounds!\n");
+    return false;
+  }
+
+  chip8_execute(c8, chip8_fetch(c8));
+
+  return true;
 }
 
  // update delay & sound timers
