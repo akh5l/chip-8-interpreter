@@ -3,6 +3,7 @@
 #include <string.h>
 
 #define ROM_START 0x200
+#define SUPER_CHIP false
 
 void chip8_init(chip8* c8) { 
   
@@ -136,10 +137,6 @@ void chip8_execute(chip8* c8, uint16_t opcode) {
       c8->V[(opcode & 0x0F00) >> 8] += opcode & 0x00FF; // add NN to VX
       break;
     
-    case 0xA000:
-      c8->I = opcode & 0x0FFF; // I (index) set to NNN
-      break;
-    
     case 0x8000: // logical & arithmetic instructions
       switch (opcode & 0x000F) {
         case 0:
@@ -154,11 +151,11 @@ void chip8_execute(chip8* c8, uint16_t opcode) {
         case 3:
           c8->V[(opcode & 0x0F00) >> 8] ^= c8->V[(opcode & 0x00F0) >> 4]; // VX set to VX bitwise XOR VY
           break;
-        case 4:
+        case 4: // add
           c8->V[0xF] = (c8->V[(opcode & 0x0F00) >> 8] + c8->V[(opcode & 0x00F0) >> 4]) > 255; // trigger flag if overflow
           c8->V[(opcode & 0x0F00) >> 8] += c8->V[(opcode & 0x00F0) >> 4];
           break;
-        case 5:
+        case 5: // subtract
           c8->V[0xF] = c8->V[(opcode & 0x0F00) >> 8] >= c8->V[(opcode & 0x00F0) >> 4] ? 1 : 0; // no borrow = 1
           c8->V[(opcode & 0x0F00) >> 8] = c8->V[(opcode & 0x0F00) >> 8] - c8->V[(opcode & 0x00F0) >> 4]; // wraps naturally unsigned
           break;
@@ -166,7 +163,30 @@ void chip8_execute(chip8* c8, uint16_t opcode) {
           c8->V[0xF] = c8->V[(opcode & 0x00F0) >> 4] >= c8->V[(opcode & 0x0F00) >> 8] ? 1 : 0; // no borrow = 1
           c8->V[(opcode & 0x0F00) >> 8] = c8->V[(opcode & 0x00F0) >> 4] - c8->V[(opcode & 0x0F00) >> 8]; // wraps naturally unsigned
           break;
+        case 6: // shift depending on super-chip config or not
+          if (SUPER_CHIP) {
+            c8->V[(opcode & 0x0F00) >> 8] = c8->V[(opcode & 0x00F0) >> 4];
+          }
+          c8->V[0xF] = c8->V[(opcode & 0x0F00) >> 8] & 0x1;
+          c8->V[(opcode & 0x0F00) >> 8] >>= 1;
+          break;
+        case 0xE:
+          if (SUPER_CHIP) {
+            c8->V[(opcode & 0x0F00) >> 8] = c8->V[(opcode & 0x00F0) >> 4];
+          }
+          c8->V[0xF] = c8->V[(opcode & 0x0F00) & 0x80] >> 7;
+          c8->V[(opcode & 0x0F00) >> 8] <<= 1;
+          break;
       }
+      break;
+
+    case 0xA000:
+      c8->I = opcode & 0x0FFF; // I (index) set to NNN
+      break;
+
+    case 0xB000:
+      c8->PC = opcode & 0x0FFF;
+      c8->PC += SUPER_CHIP ? c8->V[(opcode & 0x0F00) >> 8] : c8->V[0];
       break;
     
     case 0xD000: // writing to display

@@ -5,7 +5,7 @@
 #include "../include/chip8.h"
 
 
-#define SCALE 12
+#define SCALE 8
 
 int main(int argc, char *argv[])
 {
