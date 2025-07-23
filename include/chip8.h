@@ -32,6 +32,8 @@ bool chip8_load_rom(chip8* c8, const char* filepath); // load a ROM into memory 
 
 bool chip8_cycle(chip8* c8); // fetch, decode, execute single opcode
 
+int chip8_run(chip8* c8); // run core loop
+
 void chip8_update_timers(chip8* c8); // update delay & sound timers
 
 #endif
