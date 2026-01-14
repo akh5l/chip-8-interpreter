@@ -10,6 +10,25 @@
 #define ROM_START 0x200
 #define SUPER_CHIP false
 
+const SDL_Scancode keymap[16] = {
+  SDL_SCANCODE_X,  // 0
+  SDL_SCANCODE_1,  // 1
+  SDL_SCANCODE_2,  // 2
+  SDL_SCANCODE_3,  // 3
+  SDL_SCANCODE_Q,  // 4
+  SDL_SCANCODE_W,  // 5
+  SDL_SCANCODE_E,  // 6
+  SDL_SCANCODE_A,  // 7
+  SDL_SCANCODE_S,  // 8
+  SDL_SCANCODE_D,  // 9
+  SDL_SCANCODE_Z,  // A
+  SDL_SCANCODE_C,  // B
+  SDL_SCANCODE_4,  // C
+  SDL_SCANCODE_R,  // D
+  SDL_SCANCODE_F,  // E
+  SDL_SCANCODE_V   // F
+};
+
 void chip8_init(chip8* c8) { 
   
   memset(c8->memory, 0, sizeof(c8->memory)); // zero all memory
@@ -41,6 +60,7 @@ void chip8_init(chip8* c8) {
     0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
     0xF0, 0x80, 0xF0, 0x80, 0x80  // F
   };
+  
 
   memcpy(&c8->memory[0x50], fontset, sizeof(fontset)); // load fontset into memory
 
@@ -232,9 +252,13 @@ void chip8_execute(chip8* c8, uint16_t opcode) {
 
     case 0xE000: // skip one instruction if key corresponding to VX is pressed
       if (nn == 0x009E) {
-
+        if (c8->keys[c8->V[x]]) {
+          c8->PC += 2;
+        }
       } else { // above but skip if not pressed
-
+        if (!c8->keys[c8->V[x]]) {
+          c8->PC += 2;
+        }
       }
       break;
     case 0xF000:
@@ -277,10 +301,19 @@ int chip8_run(chip8* c8) {
     SDL_Texture* texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB32, SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
     SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_NEAREST);
 
+    memset(c8->keys, 0, 16); // zero the key pressed array
+    // this shouldn't be bad because pressed keys will be reactivated i think?
+
     while (SDL_PollEvent(&event)) {
       if (event.type == SDL_EVENT_QUIT) {
         printf("\nexiting...\n");
         running = false;
+      }
+      if (event.type == SDL_EVENT_KEY_DOWN) {
+        const bool* key_states = SDL_GetKeyboardState(NULL);
+        for (int i = 0; i < 16; i++) {
+          c8->keys[i] = key_states[keymap[i]];
+        }
       }
     }
 
@@ -315,7 +348,7 @@ int chip8_run(chip8* c8) {
     SDL_RenderPresent(renderer);
 
 
-    SDL_Delay(16); // 16ms = 62.5FPS
+    SDL_DelayNS(16666666); // 16ms = 62.5FPS
   }
 
   SDL_DestroyRenderer(renderer);
