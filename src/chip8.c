@@ -294,11 +294,11 @@ int chip8_run(chip8* c8) {
 
   SDL_Window* window = SDL_CreateWindow("CHIP-8", WIDTH * SCALE, HEIGHT * SCALE, SDL_WINDOW_INPUT_FOCUS);
   SDL_Renderer* renderer = SDL_CreateRenderer(window, NULL);
+  SDL_Texture* texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB32, SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
 
   bool running = true;
   while (running) { // extract function?
-    
-    SDL_Texture* texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB32, SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
+
     SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_NEAREST);
 
     // memset(c8->keys, 0, 16); // zero the key pressed array
@@ -334,7 +334,7 @@ int chip8_run(chip8* c8) {
     for (int y = 0; y < HEIGHT; y++) {
       for (int x = 0; x < WIDTH; x++) {
         uint8_t pixel = c8->display[y * WIDTH + x];
-        framebuffer[y * (pitch / 4) + x] = pixel ? 0xFFFFFFFF : 0xFF000000;
+        framebuffer[y * (pitch / 4) + x] = pixel ? 0x4EC6A8FF : 0x2C413CFF; // BGRA
       }
     }
 
@@ -351,6 +351,7 @@ int chip8_run(chip8* c8) {
     SDL_DelayNS(16666666); // 16ms = 62.5FPS
   }
 
+  SDL_DestroyTexture(texture);
   SDL_DestroyRenderer(renderer);
   SDL_DestroyWindow(window);
   SDL_Quit();
