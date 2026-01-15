@@ -8,7 +8,7 @@ int main(int argc, char *argv[])
   chip8 c8;
   chip8_init(&c8);
 
-  if (!chip8_load_rom(&c8, "../test-roms/test-quirks.ch8")) {
+  if (!chip8_load_rom(&c8, argv[1])) {
     fprintf(stderr, "Failed to load ROM!");
     return 1;
   }
