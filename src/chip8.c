@@ -301,7 +301,7 @@ int chip8_run(chip8* c8) {
     SDL_Texture* texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB32, SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
     SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_NEAREST);
 
-    memset(c8->keys, 0, 16); // zero the key pressed array
+    // memset(c8->keys, 0, 16); // zero the key pressed array
     // this shouldn't be bad because pressed keys will be reactivated i think?
 
     while (SDL_PollEvent(&event)) {
@@ -309,7 +309,7 @@ int chip8_run(chip8* c8) {
         printf("\nexiting...\n");
         running = false;
       }
-      if (event.type == SDL_EVENT_KEY_DOWN) {
+      if (event.type == SDL_EVENT_KEY_DOWN || event.type == SDL_EVENT_KEY_UP) {
         const bool* key_states = SDL_GetKeyboardState(NULL);
         for (int i = 0; i < 16; i++) {
           c8->keys[i] = key_states[keymap[i]];
