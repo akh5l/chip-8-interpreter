@@ -102,7 +102,7 @@ uint16_t chip8_fetch(chip8* c8) {
   // combine two nibbles into one opcode
   uint16_t opcode = c8->memory[c8->PC] << 8 | c8->memory[c8->PC + 1];
 
-  // increment by 2 as next instruction is 2 bytes ahead
+  // increment PC by 2 as next instruction is 2 bytes ahead
   c8->PC += 2;
 
   return opcode;
@@ -262,6 +262,39 @@ void chip8_execute(chip8* c8, uint16_t opcode) {
       }
       break;
     case 0xF000:
+      if (nn == 0x0007) {
+        c8->V[x] = c8->delay_timer;
+      } else if (nn == 0x0015) {
+        c8->delay_timer = c8->V[x];
+      } else if (nn == 0x0018) {
+        c8->sound_timer = c8->V[x];
+      } else if (nn == 0x001E) {
+        c8->I += c8->V[x];
+      } else if (nn == 0x000A) {
+        // stop execution unless a key is pressed
+        c8->PC -= 2;
+        for (int i = 0; i < 16; i++) {
+          if (c8->keys[i]) {
+            c8->PC += 2;
+            c8->V[x] = c8->keys[i]; // save the pressed key to VX
+            break;
+          }
+        }
+      } else if (nn == 0x0029) {
+        c8->memory[c8->I] = 0x50 + (c8->V[x] * 5); // I = font start address + (VX * font bytes per char) - this points I to a specific character
+      } else if (nn == 0x0033) {
+        c8->memory[c8->I] = c8->V[x] / 100; // splits VX into hundreds, tens, ones
+        c8->memory[c8->I + 1] = (c8->V[x] / 10) % 10;
+        c8->memory[c8->I + 2] = c8->V[x] % 10;
+      } else if (nn == 0x0055) { // this puts V0 to V[x] in memory from I to I + x
+        for (int r = 0; r++; r <= x) { // r for register, why not
+          c8->memory[c8->I + r] = c8->V[r];
+        }
+      } else if (nn == 0x0065) { // inverse of above, puts I to I + x in V0 to VX
+        for (int r = 0; r++; r <= x) {
+          c8->V[r] = c8->memory[c8->I + r];
+        }
+      }
       
       break;
 
