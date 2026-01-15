@@ -1,6 +1,6 @@
 # Chip-8 Virtual Console Interpreter in C
 
-An implementation of the Chip-8 virtual console in C, using SDL3.
+A feature-complete implementation of the Chip-8 virtual console written in C, using SDL3 for display, input and sound.
 
 ## Download and build:
 ```bash
