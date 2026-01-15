@@ -334,6 +334,7 @@ int chip8_run(chip8* c8) {
   uint64_t current;
   uint64_t last_cpu = SDL_GetTicksNS();
   uint64_t last_timers = SDL_GetTicksNS();
+  uint64_t last_draw = SDL_GetTicksNS();
   
   while (running) { // extract function?
 
@@ -351,14 +352,18 @@ int chip8_run(chip8* c8) {
     }
 
     if (current - last_timers > (1000000000 / 60)) {
-      chip8_update_timers(c8);
-      
-      if (sdl_render(c8, renderer, texture) == 1) {
-        return 1;
-      }
+      chip8_update_timers(c8);      
       last_timers = current;
     }
 
+    if (current - last_draw > (1000000000 / 300)) {
+      if (sdl_render(c8, renderer, texture) == 1) {
+        return 1;
+      }
+      last_draw = current;
+    }
+
+    SDL_DelayNS(1000000);
   }
 
   SDL_DestroyTexture(texture);
