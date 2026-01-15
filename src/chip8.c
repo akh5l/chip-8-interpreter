@@ -287,11 +287,11 @@ void chip8_execute(chip8* c8, uint16_t opcode) {
         c8->memory[c8->I + 1] = (c8->V[x] / 10) % 10;
         c8->memory[c8->I + 2] = c8->V[x] % 10;
       } else if (nn == 0x0055) { // this puts V0 to V[x] in memory from I to I + x
-        for (int r = 0; r++; r <= x) { // r for register, why not
+        for (int r = 0; r <= x; r++) { // r for register, why not
           c8->memory[c8->I + r] = c8->V[r];
         }
       } else if (nn == 0x0065) { // inverse of above, puts I to I + x in V0 to VX
-        for (int r = 0; r++; r <= x) {
+        for (int r = 0; r <= x; r++) {
           c8->V[r] = c8->memory[c8->I + r];
         }
       }
