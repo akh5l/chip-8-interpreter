@@ -4,6 +4,7 @@
 #define WIDTH 64
 #define HEIGHT 32
 
+#include <SDL3/SDL.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include "stack.h"
@@ -35,5 +36,9 @@ bool chip8_cycle(chip8* c8); // fetch, decode, execute single opcode
 int chip8_run(chip8* c8); // run core loop
 
 void chip8_update_timers(chip8* c8); // update delay & sound timers
+
+bool sdl_check_events(chip8* c8); // check exit/input events from SDL
+
+int sdl_render(chip8* c8, SDL_Renderer* renderer, SDL_Texture* texture); // draw frame on SDL window
 
 #endif
