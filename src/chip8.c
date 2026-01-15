@@ -415,8 +415,8 @@ int sdl_render(chip8* c8, SDL_Renderer* renderer, SDL_Texture* texture) {
     for (int y = 0; y < HEIGHT; y++) {
       for (int x = 0; x < WIDTH; x++) {
         uint8_t pixel = c8->display[y * WIDTH + x];
-        framebuffer[y * (pitch / 4) + x] = pixel ? 0x4EC6A8FF : 0x2C413CFF; // BGRA
-      }
+        framebuffer[y * (pitch / 4) + x] = pixel ? 0x4EC6A8FF : 0x2C413CFF; // BGRA, BG last
+      } // orange + yellow colourscheme : 0x01CCFFFF : 0x006799FF
     }
 
     SDL_UnlockTexture(texture);
