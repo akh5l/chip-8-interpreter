@@ -1,14 +1,13 @@
-#include <SDL3/SDL.h>
-#include <SDL3/SDL_main.h>
-
 #include "../include/chip8.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
-#define SCALE 8
-#define ROM_START 0x200
+#define SCALE 24 // window size multiplier - scales 64 x 32
 #define SUPER_CHIP false
+#define CLOCK_RATE_HZ 1000
+
+#define ROM_START 0x200
 
 const SDL_Scancode keymap[16] = {
   SDL_SCANCODE_X,  // 0
@@ -319,46 +318,90 @@ bool chip8_cycle(chip8* c8) {
 int chip8_run(chip8* c8) {
   
   if (!SDL_Init(SDL_INIT_VIDEO)) {
-    fprintf(stderr, "failed to initialize video\n");
+    fprintf(stderr, "Failed to initialize video with SDL\n");
     return 1;
   }
 
-  SDL_Event event;
+  // SDL_SetHint(SDL_HINT_RENDER_VSYNC, "1");
 
   SDL_Window* window = SDL_CreateWindow("CHIP-8", WIDTH * SCALE, HEIGHT * SCALE, SDL_WINDOW_INPUT_FOCUS);
   SDL_Renderer* renderer = SDL_CreateRenderer(window, NULL);
   SDL_Texture* texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB32, SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
+  SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_NEAREST);
 
   bool running = true;
+
+  uint64_t current;
+  uint64_t last_cpu = SDL_GetTicksNS();
+  uint64_t last_timers = SDL_GetTicksNS();
+  
   while (running) { // extract function?
 
-    SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_NEAREST);
-
-    // memset(c8->keys, 0, 16); // zero the key pressed array
-    // this shouldn't be bad because pressed keys will be reactivated i think?
-
-    while (SDL_PollEvent(&event)) {
-      if (event.type == SDL_EVENT_QUIT) {
-        printf("\nexiting...\n");
-        running = false;
-      }
-      if (event.type == SDL_EVENT_KEY_DOWN || event.type == SDL_EVENT_KEY_UP) {
-        const bool* key_states = SDL_GetKeyboardState(NULL);
-        for (int i = 0; i < 16; i++) {
-          c8->keys[i] = key_states[keymap[i]];
-        }
-      }
-    }
-
-    if (!chip8_cycle(c8)) {
+    if (!sdl_check_events(c8)) {
       running = false;
     }
 
+    current = SDL_GetTicksNS();
+
+    if (current - last_cpu > (1000000000 / CLOCK_RATE_HZ)) { // call at ~700Hz
+      if (!chip8_cycle(c8)) {
+        running = false;
+      }
+      last_cpu = current;
+    }
+
+    if (current - last_timers > (1000000000 / 60)) {
+      chip8_update_timers(c8);
+      
+      if (sdl_render(c8, renderer, texture) == 1) {
+        return 1;
+      }
+      last_timers = current;
+    }
+
+  }
+
+  SDL_DestroyTexture(texture);
+  SDL_DestroyRenderer(renderer);
+  SDL_DestroyWindow(window);
+  SDL_Quit();
+  return 0;
+}
+
+void chip8_update_timers(chip8* c8) {
+  if (c8->sound_timer > 0) {
+    c8->sound_timer--;
+  }
+  if (c8->delay_timer > 0) {
+    c8->delay_timer--;
+  }
+}
+
+bool sdl_check_events(chip8* c8) { // returns running state
+  SDL_Event event;
+
+  while (SDL_PollEvent(&event)) {
+    if (event.type == SDL_EVENT_QUIT) {
+      printf("\nexiting...\n");
+      return false;
+    }
+    if (event.type == SDL_EVENT_KEY_DOWN || event.type == SDL_EVENT_KEY_UP) {
+      const bool* key_states = SDL_GetKeyboardState(NULL);
+      for (int i = 0; i < 16; i++) {
+        c8->keys[i] = key_states[keymap[i]];
+      }
+    }
+  }
+
+  return true;
+}
+
+int sdl_render(chip8* c8, SDL_Renderer* renderer, SDL_Texture* texture) {
     void* pixels;
     int pitch = WIDTH * 4; // WIDTH to be replaced by texture width?
 
     if (!SDL_LockTexture(texture, NULL, &pixels, &pitch)) {
-      fprintf(stderr, "failed to lock texture: %s\n", SDL_GetError());
+      fprintf(stderr, "Failed to lock texture: %s\n", SDL_GetError());
       return 1;
     }
 
@@ -371,27 +414,12 @@ int chip8_run(chip8* c8) {
       }
     }
 
-
     SDL_UnlockTexture(texture);
-
     SDL_RenderClear(renderer);
 
     SDL_FRect dstRect = {0, 0, WIDTH * SCALE, HEIGHT * SCALE};
     SDL_RenderTexture(renderer, texture, NULL, &dstRect);
     SDL_RenderPresent(renderer);
 
-
-    SDL_DelayNS(16666666); // 16ms = 62.5FPS
-  }
-
-  SDL_DestroyTexture(texture);
-  SDL_DestroyRenderer(renderer);
-  SDL_DestroyWindow(window);
-  SDL_Quit();
-  return 0;
-}
-
- // update delay & sound timers
-void chip8_update_timers(chip8* c8) {
-
+    return 0;
 }
