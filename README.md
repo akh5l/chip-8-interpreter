@@ -10,6 +10,5 @@ cmake .. && make
 ```
 
 ## Usage:
-`./chip8`
-
-ROMs cannot be specified as a parameter to the executable (yet!) so must be specified in src/main.c
+`./chip8 (path to ROM)`
+e.g. `./chip8 ../test-roms/snake.ch8`
