@@ -11,4 +11,7 @@ cmake .. && make
 
 ## Usage:
 `./chip8 (path to ROM)`
-e.g. `./chip8 ../test-roms/snake.ch8`
+
+For example:
+
+`./chip8 ../test-roms/snake.ch8`
