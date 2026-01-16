@@ -3,11 +3,14 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define SCALE 24 // window size multiplier - scales 64 x 32
-#define SUPER_CHIP false
+#define ROM_START 0x200
+
+#define SCALE 12 // window size multiplier - scales 64 x 32
 #define CLOCK_RATE_HZ 1000
 
-#define ROM_START 0x200
+#define SUPER_CHIP false
+#define QUIRK_MEMORY false // whether saving/loading registers to memory increments I register
+#define QUIRK_JUMPING false // whether "jump to address" uses V0 or VX
 
 const SDL_Scancode keymap[16] = {
   SDL_SCANCODE_X,  // 0
@@ -175,12 +178,15 @@ void chip8_execute(chip8* c8, uint16_t opcode) {
           break;
         case 1:
           c8->V[x] |= c8->V[y]; // VX set to VX bitwise OR VY
+          c8->V[0xF] = 0; // set flags register to 0
           break;
         case 2:
           c8->V[x] &= c8->V[y]; // VX set to VX bitwise AND VY
+          c8->V[0xF] = 0;
           break;
         case 3:
           c8->V[x] ^= c8->V[y]; // VX set to VX bitwise XOR VY
+          c8->V[0xF] = 0;
           break;
         case 4: // add
           c8->V[0xF] = (c8->V[x] + c8->V[y]) > 255; // trigger flag if overflow
@@ -212,23 +218,24 @@ void chip8_execute(chip8* c8, uint16_t opcode) {
       break;
 
     case 0xA000:
-      c8->I = nnn; // I (index) set to NNN
+      c8->I = nnn;
       break;
 
     case 0xB000:
       c8->PC = nnn;
-      c8->PC += SUPER_CHIP ? c8->V[x] : c8->V[0];
+      c8->PC += SUPER_CHIP ? c8->V[x] : c8->V[0]; // SUPER CHIP TODO: make sure this is ok
       break;
 
     case 0xC000:
       c8->V[x] = (rand() % 256) & nn;
       break;
     
-    case 0xD000: // writing to display
-      uint8_t dx = c8->V[x]; // get x from VX and wrap around screen with modulo
+    case 0xD000: // writing to display TODO: fix clipping
+      
+      uint8_t dx = c8->V[x]; // get x from VX
       uint8_t dy = c8->V[y]; // same as above but VY and y
 
-      c8->V[0xF] = 0;
+      c8->V[0xF] = 0; // reset flag register
 
       for (int row = 0; row < n; row++) {
         uint8_t sprite_byte = c8->memory[c8->I + row];
@@ -280,7 +287,7 @@ void chip8_execute(chip8* c8, uint16_t opcode) {
           }
         }
       } else if (nn == 0x0029) {
-        c8->memory[c8->I] = 0x50 + (c8->V[x] * 5); // I = font start address + (VX * font bytes per char) - this points I to a specific character
+        c8->I = 0x50 + (c8->V[x] * 5); // I = font start address + (VX * font bytes per char) - this points I to a specific character
       } else if (nn == 0x0033) {
         c8->memory[c8->I] = c8->V[x] / 100; // splits VX into hundreds, tens, ones
         c8->memory[c8->I + 1] = (c8->V[x] / 10) % 10;
