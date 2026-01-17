@@ -14,16 +14,17 @@ extern const uint8_t fontset[80]; // stores fontset to be copied into memory
 typedef struct {
   uint8_t memory[4096]; // 4KB RAM
   uint8_t display[WIDTH * HEIGHT]; // holds pixels to display before translation to SDL
-  uint16_t PC; // program counter
-  uint16_t I; // indexes program counter
 
   Stack stack; // for 16-bit addresses
 
-  uint8_t delay_timer; // decremented at 60Hz until it reaches 0
-  uint8_t sound_timer; // beep plays while > 0
-
   uint8_t V[16]; // general purpose variable registers; register VF is used as a flag
   uint8_t keys[16]; // stores the keypad
+
+  uint16_t PC; // program counter
+  uint16_t I; // indexes program counter
+  
+  uint8_t delay_timer; // decremented at 60Hz until it reaches 0
+  uint8_t sound_timer; // beep plays while > 0
 
 } chip8;
 
